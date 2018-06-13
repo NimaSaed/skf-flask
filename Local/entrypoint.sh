@@ -3,8 +3,8 @@
 set -x 
 
 HTTPS=${HTTPS:-'true'}
-JWT_SECRET=${JWT_SECRET:-'changeme'}
-ORIGIN=${ORIGIN:-'localhost'}
+JWT_SECRET=${JWT_SECRET:-'testtesttesttest'}
+ORIGIN=${ORIGIN:-'10.156.20.214'}
 
 # Creation of certificates
 if [[ "$HTTPS" == "true" ]]; then
@@ -27,11 +27,17 @@ fi
 if [[ "$ORIGIN" != "" ]]; then
     perl -pi -e "s/\*/https:\/\/$ORIGIN/" ../skf/settings.py
     perl -pi -e "s/0.0.0.0/$ORIGIN/" ../Angular/package.json
-    perl -pi -e "s/localhost/$ORIGIN/" ../Angular/src/envirnoments/environment.prod.ts
+    perl -pi -e "s/localhost/$ORIGIN/" ../Angular/src/environments/environment.prod.ts
 
     if [[ "$HTTPS" == "true" ]]; then
         perl -pi -e "s/http:\/\/localhost:4200/https:\/\/$ORIGIN/" ../Angular/package.json
-        perl -pi -e "s/localhost/$ORIGIN/g" site-tls.conf
+        cp site-tls.conf.default site-tls.conf
+	perl -pi -e "s/localhost/$ORIGIN/g" site-tls.conf
+	cd ../Angular
+	root=$(pwd)
+        root=$(echo $root | sed -r s/[/]/'\\\/'/g)
+	cd ../Local
+	perl -pi -e "s/pwd/$root/g" site-tls.conf
     else
         perl -pi -e "s/localhost:4200/$ORIGIN/" ../Angular/package.json
     fi
@@ -41,14 +47,17 @@ else
 fi
 
 if [[ "$HTTPS" == "true" ]]; then
-    cp site-tls.conf /etc/nginx/conf.d/default.conf
+    cp server.key /etc/nginx
+    cp server.pem /etc/nginx
+    cp site-tls.conf /etc/nginx/nginx.conf
+    rm site-tls.conf
 else
-    cp site.conf /etc/nginx/conf.d/default.conf
+    cp site.conf /etc/nginx/nginx.conf
 fi
 
 # Start nginx
 sleep 5
-sudo nginx
+nginx
 
 # Start SKF services
 bash wrapper.sh
