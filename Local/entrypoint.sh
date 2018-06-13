@@ -4,7 +4,8 @@ set -x
 
 HTTPS=${HTTPS:-'true'}
 JWT_SECRET=${JWT_SECRET:-'testtesttesttest'}
-ORIGIN=${ORIGIN:-'10.156.20.214'}
+ip=$(ifconfig | grep eno -A1 | grep inet | awk '{print $2}')
+ORIGIN=${ORIGIN:- $ip}
 
 # Creation of certificates
 if [[ "$HTTPS" == "true" ]]; then
